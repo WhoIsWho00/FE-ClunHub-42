@@ -52,11 +52,52 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const requestPasswordReset = createAsyncThunk(
+  "auth/requestPasswordReset",
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`/api/auth/forgot-password`, { email });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        return rejectWithValue(error.response.data.message || "Failed to request password reset");
+      } else {
+        return rejectWithValue("Network error. Please try again later.");
+      }
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (data, { rejectWithValue }) => {
+    try {
+      console.log("Sending reset password request:", data);
+      const response = await axios.post(`/api/auth/reset-password`, {
+        token: data.token,
+        newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword
+      });
+      console.log("Reset password response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Reset password error:", error.response?.data || error.message);
+      return rejectWithValue(error.response?.data || "Failed to reset password");
+    }
+  }
+);
 const initialState = {
   user: null,
   token: null,
   isLoading: false,
   error: null,
+  passwordReset: {
+    isLinkSent: false,
+    isCodeVerified: false,
+    isLoading: false,
+    error: null,
+    message: null
+  }
 };
 
 const authSlice = createSlice({
@@ -71,6 +112,15 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearPasswordResetState: (state) => {
+      state.passwordReset = {
+        isLinkSent: false,
+        isCodeVerified: false,
+        isLoading: false,
+        error: null,
+        message: null
+      };
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -102,9 +152,44 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+
+       // Запит на скидання паролю
+       .addCase(requestPasswordReset.pending, (state) => {
+        state.passwordReset.isLoading = true;
+        state.passwordReset.error = null;
+      })
+      .addCase(requestPasswordReset.fulfilled, (state) => {
+        state.passwordReset.isLoading = false;
+        state.passwordReset.isLinkSent = true;
+        state.passwordReset.message = "If your email is registered, a password reset code has been sent.";
+      })
+      .addCase(requestPasswordReset.rejected, (state, action) => {
+        state.passwordReset.isLoading = false;
+        state.passwordReset.error = action.payload;
+      })
+
+      // Скидання паролю
+      .addCase(resetPassword.pending, (state) => {
+        state.passwordReset.isLoading = true;
+        state.passwordReset.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.passwordReset.isLoading = false;
+        state.passwordReset.isCodeVerified = true;
+        state.passwordReset.message = "Your password has been reset successfully";
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.passwordReset.isLoading = false;
+        
+        // Handle ErrorResponseDto format
+        if (action.payload && action.payload.error) {
+          state.passwordReset.error = action.payload.error;
+        } else {
+          state.passwordReset.error = action.payload || "Failed to reset password";
+        }
       });
   },
 });
-
-export const { logout, clearError } = authSlice.actions;
+export const { logout, clearError, clearPasswordResetState } = authSlice.actions;
 export default authSlice.reducer;
