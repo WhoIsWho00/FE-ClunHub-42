@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Original+Surfer&family=Inika&display=swap');
+
+/* Общий контейнер дашборда */
+.dashboardContainer {
+  display: flex;                       /* Строим вертикальный layout */
+  flex-direction: column;
+  align-items: center;                /* Центруем контент по горизонтали */
+  padding: 20px;
+  width: 100%;
+  min-height: 100vh;                  /* Занимаем всю высоту экрана */
+  background: linear-gradient(to bottom, #9bf0e1, #f8e861); /* фон */
+  font-family: 'Original Surfer', cursive;
+  position: relative;
+}
+
+/* Кнопка "Add new task" */
+.addTaskButton {
+  width: 100%;
+  max-width: 320px;
+  margin: 20px 0;
+  background-color: #8BF3FF;
+  color: #01578F;
+  border: 2px solid #2DACC0;
+  border-radius: 30px;
+  padding: 12px 24px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  font-family: 'Original Surfer', cursive;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.addTaskButton:hover {
+  transform: scale(1.05); /* эффект при наведении */
+}
+
+/* Список задач */
+.taskList {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* отступы между задачами */
+}
+
+/* Одна строка с задачей и иконками */
+.taskRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Кнопка задачи */
+.taskButton {
+  flex-grow: 1; /* занимает доступное пространство */
+  padding: 12px 18px;
+  background: #3efcc0;
+  border: none;
+  border-radius: 20px;
+  font-size: 18px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  font-family: 'Original Surfer', cursive;
+}
+
+/* Иконки рядом с задачей */
+.taskIcons {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.icon {
+  width: 50px;
+  height: 50px;
+}
+
+/* Кнопка перехода к выполненным задачам */
+.completedButton {
+  width: 100%;
+  max-width: 320px;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #8BF3FF;
+  color: #01578F;
+  border: 2px solid #2DACC0;
+  border-radius: 30px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  font-family: 'Original Surfer', cursive;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Нижний текст */
+.footerText {
+  margin-top: auto;       /* прижимает к низу */
+  padding-top: 20px;
+  font-size: 15px;
+  color: #645270;
+  letter-spacing: 2px;
+  font-family: 'Inika', serif;
+  text-align: center;
+}
+
+/* Модальное окно (фон) */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* Само модальное окно */
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 300px;
+  text-align: center;
+}
+
+/* Заголовок модального окна */
+.modalTitle {
+  font-size: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+/* Текст в модалке */
+.modalText {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+/* Кнопка подтверждения */
+.okButton {
+  margin-top: 10px;
+  background: #86e7f8;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 16px;
+}
