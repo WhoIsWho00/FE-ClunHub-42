@@ -15,7 +15,6 @@
     flex-direction: column;
 }
 
-/* Поле названия (как кнопка) */
 .taskTitleInput {
     width: 100%;
     padding: 12px 24px;
@@ -64,16 +63,6 @@
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-.addTaskContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    min-height: 90vh; 
-    background: linear-gradient(to bottom, #9bf0e1, #f8e861);
-    font-family: 'Original Surfer', cursive;
-}
-
 .descriptionInput {
     width: 100%;
     min-height: 200px;
@@ -84,13 +73,13 @@
     font-size: 16px;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
     resize: none;
-    margin-bottom: 1px; /* Добавил отступ снизу */
+    margin-bottom: 1px;
 }
 
 .actionButtonsContainer {
     width: 100%;
     position: relative;
-    margin-top: 0; /* Уменьшил с 20px до 10px */
+    margin-top: 0;
     height: 140px;
 }
 
@@ -120,19 +109,9 @@
     top: -15px;
 }
 
-.cancelIcon {
-    width: 140px;
-    height: 140px;
-    position: absolute;
-    right: 0;
-    transform: translateX(25%); 
-    top: -35px;
-}
-
 .actionButtons img {
     cursor: pointer;
     object-fit: contain;
-    
 }
 
 .footer {
@@ -146,4 +125,68 @@
     margin-bottom: -2cm; 
     width: 100%;
     padding: 5px 0;     
+}
+.successPopup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popupContent {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-width: 80%;
+}
+
+.popupContent p {
+    color: #01578F;
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-family: 'Original Surfer', cursive;
+}
+
+.okButton {
+    background: #19FEA6;
+    color: #01578F;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Original Surfer', cursive;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.okButton:hover {
+    background: #15e895;
+}
+.errorInput {
+    border: 2px solid #ff6b6b !important;
+    animation: shake 0.5s;
+}
+
+.errorMessage {
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-top: -15px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-family: 'Original Surfer', cursive;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
 }
