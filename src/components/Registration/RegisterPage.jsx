@@ -69,6 +69,11 @@ const RegisterPage = () => {
 
     if (!formData.username.trim()) {
       newErrors.username = "Username is required";
+    } else if (formData.username.trim().length < 2) {
+      newErrors.username = "Username should have at least 2 symbols";
+    } else if (formData.username.trim().length > 15) {
+      newErrors.username = "Username can't be more than 15 symbols";
+    
     }
 
     if (!formData.age.trim()) {
