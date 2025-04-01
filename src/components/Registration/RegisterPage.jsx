@@ -139,6 +139,7 @@ const RegisterPage = () => {
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <div className={styles.inputGroup}>
             <input
+              id="username-input"
               type="text"
               name="username"
               value={formData.username}
@@ -152,6 +153,7 @@ const RegisterPage = () => {
 
           <div className={styles.inputGroup}>
             <input
+              id="age-input"
               type="number"
               name="age"
               value={formData.age}
@@ -166,6 +168,7 @@ const RegisterPage = () => {
 
           <div className={styles.inputGroup}>
             <div
+              id="avatar-selector"
               className={styles.input}
               onClick={() => setShowAvatarModal(true)}
               style={{
@@ -193,6 +196,7 @@ const RegisterPage = () => {
 
           <div className={styles.inputGroup}>
             <input
+              id="email-input"
               type="email"
               name="email"
               value={formData.email}
@@ -206,6 +210,7 @@ const RegisterPage = () => {
 
           <div className={styles.inputGroup}>
             <input
+              id="password-input"
               type="password"
               name="password"
               value={formData.password}
@@ -220,6 +225,7 @@ const RegisterPage = () => {
           {errors.submit && <div className={styles.submitError}>{errors.submit}</div>}
 
           <button
+            id="register-submit-btn"
             type="submit"
             className={styles.submitButton}
             disabled={isLoading}
@@ -249,7 +255,9 @@ const RegisterPage = () => {
                 />
               ))}
             </div>
-            <button className={styles.cancelButton} onClick={() => setShowAvatarModal(false)}>
+            <button 
+            id="avatar-cancel-btn"
+            className={styles.cancelButton} onClick={() => setShowAvatarModal(false)}>
               Cancel
             </button>
           </div>
