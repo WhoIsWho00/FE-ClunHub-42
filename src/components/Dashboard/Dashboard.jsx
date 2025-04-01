@@ -38,9 +38,9 @@ const Dashboard = () => {
     <div className={styles.dashboardContainer}>
       <ProfileHeader />
 
-      <button className={styles.addTaskButton} onClick={() => navigate('/add-task')}>
-        Add new task
-      </button>
+      <button className={styles.addTaskButton} onClick={() => navigate('/addtask')}>
+  Add new task
+</button>
 
       <div className={styles.taskList}>
         {tasks.map(task => (

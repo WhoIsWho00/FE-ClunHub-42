@@ -5,6 +5,7 @@ import RegisterPage from './components/Registration/RegisterPage';
 import LoginPage from './components/Login/LoginPage';
 import ForgotPasswordPage from './components/ForgotPassword/ForgotPasswordPage';
 import Dashboard from './components/Dashboard/Dashboard';
+import AddTask from './components/AddTask/AddTask';
 
 
 function App() {
@@ -16,6 +17,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} /> 
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/addtask" element={<AddTask />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
