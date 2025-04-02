@@ -62,7 +62,6 @@ const AddTask = () => {
                 completed: false
             };
             
-            // Добавляем новую задачу в начало массива
             localStorage.setItem('tasks', JSON.stringify([newTask, ...existingTasks]));
             setShowSuccess(true);
         }

@@ -35,7 +35,7 @@
   transform: scale(1.05);
 }
 
-/* Стили для кнопок-стрелок */
+
 .arrowButton {
   background: none;
   border: none;
@@ -250,8 +250,6 @@
   border-radius: 30px;
   font-weight: bold;
 }
-
-/* Добавленные стили из верхнего кода */
 .errorInput {
   border: 2px solid #ff6b6b !important;
   animation: shake 0.5s;
