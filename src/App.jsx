@@ -10,6 +10,7 @@ import Calendar from './components/Calendar/Calendar';
 import CompletedTasks from './components/CompletedTasks/CompletedTasks';
 
 
+
 function App() {
   return (
     <Router>
@@ -22,7 +23,6 @@ function App() {
         <Route path="/addtask" element={<AddTask />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/completed" element={<CompletedTasks />} />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

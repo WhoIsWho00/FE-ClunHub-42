@@ -4,12 +4,12 @@ import { useDispatch } from 'react-redux';
 import { updateTaskStatus } from '../../store/slices/taskSlice'; 
 import styles from './Dashboard.module.css';
 import ProfileHeader from '../ProfileHeader/ProfileHeader';
-
 import eyesIcon from '/src/assets/images/eyes.png';
 import checkmarkIcon from '/src/assets/images/checkmark.png';
 import cancelIcon from '/src/assets/images/cancel.png';
 import arrowUpIcon from '/src/assets/images/arrow01.svg';  
 import arrowDownIcon from '/src/assets/images/arrow02.svg';
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +20,8 @@ const Dashboard = () => {
   const [deleteConfirmationTask, setDeleteConfirmationTask] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
+
+
 
   useEffect(() => {
     const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -60,6 +62,7 @@ const Dashboard = () => {
     });
   };
 
+
   const TASKS_PER_PAGE = 3;
   const totalPages = Math.ceil(tasks.length / TASKS_PER_PAGE);
   const startIndex = currentPage * TASKS_PER_PAGE;
@@ -86,7 +89,7 @@ const Dashboard = () => {
     localStorage.setItem('selectedDate', formattedToday);
     navigate('/completed');
   };
-
+  
   return (
     <div className={styles.dashboardContainer}>
       <ProfileHeader />
@@ -97,6 +100,7 @@ const Dashboard = () => {
       >
         Add new task
       </button>
+
 
       {tasks.length > TASKS_PER_PAGE && (
         <button
@@ -114,6 +118,7 @@ const Dashboard = () => {
 
       <div className={styles.taskList}>
         {visibleTasks.map(task => (
+
           <div key={task.id} className={styles.taskRow}>
             <div 
               className={`${styles.taskButton} ${styles.taskText}`}
@@ -151,6 +156,7 @@ const Dashboard = () => {
         ))}
       </div>
 
+
       {tasks.length > TASKS_PER_PAGE && (
         <button
           className={`${styles.arrowButton} ${styles.arrowButtonBottom}`}
@@ -164,11 +170,11 @@ const Dashboard = () => {
           />
         </button>
       )}
-
       <button 
         className={styles.completedButton} 
         onClick={() => navigate('/calendar')}
       >
+
         Calendar
       </button>
 
