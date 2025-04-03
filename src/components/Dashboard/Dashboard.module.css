@@ -35,6 +35,52 @@
   transform: scale(1.05);
 }
 
+
+/* Стили для кнопок-стрелок */
+.arrowButton {
+  background: none;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  margin: 5px 0;
+  transition: transform 0.2s;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.arrowButtonTop {
+  margin-top: 10px;
+}
+
+.arrowButtonBottom {
+  margin-bottom: 10px;
+}
+
+.arrowButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.arrowButton:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.arrowIcon {
+  width: 30px;
+  height: 30px;
+}
+
+.taskList {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+  padding: 0;
+  box-sizing: border-box;
+
 .scrollableTaskList {
   width: 100%;
   max-width: 320px;
@@ -63,19 +109,23 @@
 .scrollableTaskList::-webkit-scrollbar-thumb {
   background-color: #3efcc0;
   border-radius: 3px;
+
 }
 
 .taskRow {
   display: flex;
   align-items: center;
   width: 100%;
+  min-height: 44px;
   height: 44px;
   flex-shrink: 0;
+
 }
 
 .taskButton, .taskText {
   flex: 1;
   min-width: 0;
+  height: 44px;
   height: 100%;
   padding: 0 15px;
   background: #3efcc0;
@@ -125,7 +175,7 @@
 .completedButton {
   width: 100%;
   max-width: 320px;
-  margin-top: 20px;
+  margin-top: 8px;
   padding: 8px 16px;
   background-color: #8BF3FF;
   color: #01578F;
@@ -139,6 +189,12 @@
   font-weight: bold;
 }
 
+
+.completedButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .footerText {
   margin-top: auto;
   padding-top: 20px;
@@ -150,6 +206,9 @@
   position: relative;
   width: 100%;
 }
+
+
+/* Модальные окна */
 
 .modalOverlay {
   position: fixed;
@@ -228,4 +287,56 @@
   padding: 8px 16px;
   border-radius: 30px;
   font-weight: bold;
+
+}
+
+/* Добавленные стили из верхнего кода */
+.errorInput {
+  border: 2px solid #ff6b6b !important;
+  animation: shake 0.5s;
+}
+
+.errorMessage {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: -15px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-family: 'Original Surfer', cursive;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.successPopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popupContent {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  max-width: 80%;
+}
+
+.popupContent p {
+  color: #01578F;
+  font-size: 18px;
+  margin-bottom: 20px;
+  font-family: 'Original Surfer', cursive;
+
 }
