@@ -170,13 +170,13 @@ const Dashboard = () => {
           />
         </button>
       )}
-      <button 
+      {/* <button 
         className={styles.completedButton} 
         onClick={() => navigate('/calendar')}
       >
 
         Calendar
-      </button>
+      </button> */}
 
       <button 
         className={styles.completedButton} 
