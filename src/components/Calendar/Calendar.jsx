@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasks } from '../../store/slices/taskSlice';
+import { formatDateForApi } from '../../utils/dataMappers';
 import ProfileHeader from '../ProfileHeader/ProfileHeader';
 import leftArrow from '../../assets/images/left.png';
 import DatePicker from 'react-datepicker';
@@ -32,14 +33,21 @@ const Calendar = () => {
         const startDate = new Date(currentYear, currentMonth, 1);
         const endDate = new Date(currentYear, currentMonth + 1, 0);
 
-        const fromDate = startDate.toISOString().split('T')[0];
-        const toDate = endDate.toISOString().split('T')[0];
+        const fromDate = formatDateForApi(startDate);
+        const toDate = formatDateForApi(endDate);
+      
+        // const fromDate = startDate.toISOString().split('T')[0];
+      // const toDate = endDate.toISOString().split('T')[0];
 
-        await dispatch(fetchTasks({ fromDate, toDate }));
-      } catch (err) {
-        console.error('Failed to fetch tasks:', err);
-      }
-    };
+      await dispatch(fetchTasks({ 
+        fromDate, 
+        toDate, 
+        includeCompleted: true // Це дозволить відображати завершені завдання
+      }));
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+    }
+  };
 
     fetchMonthTasks();
   }, [currentYear, currentMonth, dispatch]);
@@ -167,6 +175,7 @@ const Calendar = () => {
                     <TaskBubble 
                       key={i} 
                       name={task.name || task.title || 'Untitled'} 
+                      isCompleted={task.status === 'COMPLETED'}
                     />
                   ))}
 

@@ -1,7 +1,7 @@
-
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import React  from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { logout } from '../../store/slices/authSlice';
 import styles from './ProfileHeader.module.css';
 
 import avatar1 from '../../assets/avatars/avatar1.png';
@@ -20,32 +20,51 @@ const avatarMap = {
   avatar6,
 };
 
-const ProfileHeader = ({ onLogout }) => {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+const ProfileHeader = () => {
+  
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.auth.user) || {};
-  const { username, age, avatarId } = user;
-
+  const user = useSelector((state) => state.auth.user);
+  
+  
+  const username = user?.username || '';
+  const age = user?.age || '';
+  const avatarId = user?.avatarId || 'avatar1';
   const selectedAvatar = avatarMap[avatarId] || avatar1;
+  
 
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
-    <div className={styles.profileHeader}>
-  {username && (
-    <>
-      <button className={styles.logoutButton} onClick={onLogout}>
-        Log out
-      </button>
-      <img src={selectedAvatar} alt="Avatar" className={styles.avatar} />
-      <div className={styles.userInfo}>
-        <div className={styles.inputDisabled}>{username}</div>
-        <div className={styles.inputDisabled}>{age}</div>
-      </div>
-    </>
-  )}
-</div>
-
+<div className={styles.profileHeader}>
+      {user ? (
+        <>
+          <button className={styles.logoutButton} onClick={handleLogout}>
+            Log out
+          </button>
+          <img src={selectedAvatar} alt="Avatar" className={styles.avatar} />
+          <div className={styles.userInfo}>
+            <div className={styles.inputDisabled}>{username}</div>
+            <div className={styles.inputDisabled}>{age}</div>
+          </div>
+        </>
+      ) : (
+        <div className={styles.noUserInfo}>
+          <button 
+            className={styles.loginButton}
+            onClick={() => navigate('/login')}
+          >
+            Log in
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
