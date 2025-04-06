@@ -104,7 +104,7 @@ const Dashboard = () => {
       today.getMonth() + 1
     ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     localStorage.setItem("selectedDate", formattedToday);
-    navigate("/completed");
+    navigate("/calendar");
   };
 
   return (

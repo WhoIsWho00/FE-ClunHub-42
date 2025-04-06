@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../utils/axiosConfig";
 import { formatDateForApi } from "../../utils/dataMappers";
@@ -10,14 +11,18 @@ const sortTasksByDate = (tasks) => {
     return dateB - dateA;
   });
 };
-
 const organizeTasksByDate = (tasks) => {
   return tasks.reduce((acc, task) => {
-    const dateKey = task.deadline
-      ? task.deadline.split("T")[0]
-      : task.completionDate
-      ? task.completionDate.split("T")[0]
-      : null;
+    let dateKey;
+    
+    // Для виконаних завдань - дата виконання або поточна дата
+    if (task.status === 'COMPLETED') {
+      dateKey = (task.completionDate || new Date().toISOString()).split('T')[0];
+    } 
+    // Для активних завдань - дедлайн
+    else if (task.deadline) {
+      dateKey = task.deadline.split('T')[0];
+    }
 
     if (dateKey) {
       acc[dateKey] = acc[dateKey] || [];
@@ -26,7 +31,6 @@ const organizeTasksByDate = (tasks) => {
     return acc;
   }, {});
 };
-
 // Створення завдання
 export const createTask = createAsyncThunk(
   "tasks/createTask",
@@ -138,6 +142,7 @@ export const fetchTasks = createAsyncThunk(
 
       const response = await axios.get(url);
 
+      // Повертаємо повний масив даних
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -150,12 +155,24 @@ export const fetchTasks = createAsyncThunk(
 // Оновлення статусу завдання
 export const updateTaskStatus = createAsyncThunk(
   "tasks/updateTaskStatus",
-  async ({ id, status }, { rejectWithValue }) => {
+  async ({ id, status }, { rejectWithValue, dispatch }) => {
     try {
+      const now = new Date();
+      const params = { 
+        status,
+        completionDate: status === "COMPLETED" ? now.toISOString() : null
+      };
+      
       const response = await axios.patch(`/api/tasks/${id}/status`, null, {
-        params: { status },
+        params: {
+          status: params.status,
+          completionDate: params.completionDate
+        }
       });
-
+      
+      // Важливо: викликати fetchTasks з параметром включення виконаних задач
+      await dispatch(fetchTasks({ includeCompleted: true })).unwrap();
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -164,7 +181,6 @@ export const updateTaskStatus = createAsyncThunk(
     }
   }
 );
-
 // Видалення завдання
 export const deleteTask = createAsyncThunk(
   "tasks/deleteTask",
@@ -210,25 +226,34 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-
+      
         // Map and filter tasks
         const mappedTasks = (action.payload || [])
           .filter((task) => task)
-          .map((task) => ({
-            id: task.id,
-            name: task.title || task.name,
-            description: task.description,
-            deadline: task.dueDate,
-            status: task.status,
-            completed: task.completed || task.status === "COMPLETED",
-            createdAt: task.createdAt,
-          }));
-
+          .map((task) => {
+            const mappedTask = {
+              id: task.id,
+              name: task.title || task.name,
+              description: task.description,
+              deadline: task.dueDate,
+              status: task.status,
+              completionDate: task.completionDate,
+              completed: task.completed || task.status === "COMPLETED",
+              createdAt: task.createdAt,
+            };
+      
+            // ВАЖЛИВО: Явно встановлюємо completionDate для виконаних задач
+            if (mappedTask.status === "COMPLETED" && !mappedTask.completionDate) {
+              mappedTask.completionDate = new Date().toISOString();
+            }
+      
+            return mappedTask;
+          });
+      
         state.tasks = sortTasksByDate(mappedTasks);
         state.tasksByDate = organizeTasksByDate(state.tasks);
-
-        state.totalElements =
-          action.payload.totalElements || mappedTasks.length;
+      
+        state.totalElements = action.payload.totalElements || mappedTasks.length;
         state.totalPages = action.payload.totalPages || 1;
         state.page = action.payload.number || 0;
       })
@@ -242,27 +267,31 @@ const taskSlice = createSlice({
       })
       .addCase(updateTaskStatus.fulfilled, (state, action) => {
         state.loading = false;
-
-        // Знаходимо індекс завдання
+      
         const taskId = action.meta.arg.id;
         const taskIndex = state.tasks.findIndex((task) => task.id === taskId);
-
+      
         if (taskIndex !== -1) {
-          // Оновлюємо статус завдання
+          // Явно встановлюємо поточну дату виконання
           state.tasks[taskIndex].status = action.meta.arg.status;
-          state.tasks[taskIndex].completed =
-            action.meta.arg.status === "COMPLETED";
-
-          // Також оновлюємо в об'єкті tasksByDate
+          state.tasks[taskIndex].completed = action.meta.arg.status === "COMPLETED";
+          
+          if (action.meta.arg.status === "COMPLETED") {
+            state.tasks[taskIndex].completionDate = new Date().toISOString();
+          }
+      
+          // Оновлення в tasksByDate
           Object.keys(state.tasksByDate).forEach((dateKey) => {
             const dateTaskIndex = state.tasksByDate[dateKey]?.findIndex(
               (t) => t.id === taskId
             );
             if (dateTaskIndex !== -1) {
-              state.tasksByDate[dateKey][dateTaskIndex].status =
-                action.meta.arg.status;
-              state.tasksByDate[dateKey][dateTaskIndex].completed =
-                action.meta.arg.status === "COMPLETED";
+              state.tasksByDate[dateKey][dateTaskIndex].status = action.meta.arg.status;
+              state.tasksByDate[dateKey][dateTaskIndex].completed = action.meta.arg.status === "COMPLETED";
+              
+              if (action.meta.arg.status === "COMPLETED") {
+                state.tasksByDate[dateKey][dateTaskIndex].completionDate = new Date().toISOString();
+              }
             }
           });
         }
