@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasks, updateTaskStatus } from '../../store/slices/taskSlice';
@@ -10,7 +10,7 @@ import './CompletedTasks.css';
 const CompletedTasks = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { tasks, loading, error } = useSelector(state => state.tasks);
+  const { tasks, loading, error } = useSelector((state) => state.tasks);
   const [selectedDate, setSelectedDate] = useState('');
 
   const fetchTasksForDate = useCallback(async (date) => {
@@ -19,7 +19,7 @@ const CompletedTasks = () => {
         fromDate: date,
         toDate: date,
         includeCompleted: true
-      }));
+      })).unwrap();
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -67,9 +67,28 @@ const CompletedTasks = () => {
     }
   };
 
+  // Filter tasks based on the selected date
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      // For completed tasks, check if completionDate matches selected date
+      // For active tasks, check if deadline matches selected date
+      const checkDate = task.status === 'COMPLETED' 
+        ? task.completionDate 
+        : task.deadline;
+      
+      return checkDate && checkDate.split('T')[0] === selectedDate;
+    });
+  }, [tasks, selectedDate]);
   
-  const completedTasks = tasks.filter(task => task.completed || task.status === 'COMPLETED');
-  const activeTasks = tasks.filter(task => !task.completed && task.status !== 'COMPLETED');
+  const completedTasks = useMemo(() =>
+    filteredTasks.filter(task => task.completed || task.status === 'COMPLETED'), 
+    [filteredTasks]
+  );
+  
+  const activeTasks = useMemo(() =>
+    filteredTasks.filter(task => !task.completed && task.status !== 'COMPLETED'), 
+    [filteredTasks]
+  );
 
   return (
     <div className="completed-page">
@@ -83,55 +102,56 @@ const CompletedTasks = () => {
   
       {error && <div className="error-message">{error}</div>}
   
-      {/* Add a section title for clarity */}
-      <h3 className="section-title">Tasks for this date</h3>
-  
-      {/* Show completed tasks */}
-      {completedTasks.length > 0 && (
+      {loading ? (
+        <div className="loading-indicator">Loading tasks...</div>
+      ) : (
         <>
-          <h4 className="subsection-title">Completed Tasks</h4>
-          <div className="task-list">
-            {completedTasks.map((task) => (
-              <div 
-                className="task-card completed" 
-                key={task.id}
-                onClick={() => toggleTaskCompletion(task.id, true)}
-              >
-                <span className="task-status-indicator"></span>
-                {task.title || task.name || 'Untitled Task'}
-                {task.description && (
-                  <div className="task-description">{task.description}</div>
-                )}
+          {/* Show completed tasks */}
+          {completedTasks.length > 0 && (
+            <>
+              <h4 className="section-title">Completed Tasks</h4>
+              <div className="task-list">
+                {completedTasks.map((task) => (
+                  <div 
+                    className="task-card completed" 
+                    key={task.id}
+                    onClick={() => toggleTaskCompletion(task.id, true)}
+                  >
+                    {task.name || task.title || 'Untitled Task'}
+                    {task.description && (
+                      <div className="task-description">{task.description}</div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
-  
-      {/* Show active tasks */}
-      {activeTasks.length > 0 && (
-        <>
-          <h4 className="subsection-title">Active Tasks</h4>
-          <div className="task-list">
-            {activeTasks.map((task) => (
-              <div 
-                className="task-card" 
-                key={task.id}
-                onClick={() => toggleTaskCompletion(task.id, false)}
-              >
-                <span className="task-status-indicator"></span>
-                {task.title || task.name || 'Untitled Task'}
-                {task.description && (
-                  <div className="task-description">{task.description}</div>
-                )}
+            </>
+          )}
+    
+          {/* Show active tasks */}
+          {activeTasks.length > 0 && (
+            <>
+              <h4 className="section-title">Active Tasks</h4>
+              <div className="task-list">
+                {activeTasks.map((task) => (
+                  <div 
+                    className="task-card" 
+                    key={task.id}
+                    onClick={() => toggleTaskCompletion(task.id, false)}
+                  >
+                    {task.name || task.title || 'Untitled Task'}
+                    {task.description && (
+                      <div className="task-description">{task.description}</div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+    
+          {completedTasks.length === 0 && activeTasks.length === 0 && (
+            <div className="no-tasks">No tasks for this date</div>
+          )}
         </>
-      )}
-  
-      {!loading && completedTasks.length === 0 && activeTasks.length === 0 && (
-        <div className="no-tasks">No tasks for this date</div>
       )}
   
       <div className="back-section">
