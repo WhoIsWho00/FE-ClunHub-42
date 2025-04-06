@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasks, updateTaskStatus } from '../../store/slices/taskSlice';
@@ -10,16 +10,25 @@ import './CompletedTasks.css';
 const CompletedTasks = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { tasks, loading, error } = useSelector((state) => state.tasks);
+  const { tasks, loading, error } = useSelector(state => state.tasks);
   const [selectedDate, setSelectedDate] = useState('');
+  const [displayTasks, setDisplayTasks] = useState([]);
 
   const fetchTasksForDate = useCallback(async (date) => {
     try {
+     
+      const selectedDateObj = new Date(date);
+      const firstDayOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
+      const lastDayOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0);
+      
+      const fromDate = formatDateForApi(firstDayOfMonth);
+      const toDate = formatDateForApi(lastDayOfMonth);
+      
       await dispatch(fetchTasks({
-        fromDate: date,
-        toDate: date,
+        fromDate: fromDate,
+        toDate: toDate,
         includeCompleted: true
-      })).unwrap();
+      }));
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -35,6 +44,31 @@ const CompletedTasks = () => {
 
     fetchTasksForDate(dateToUse);
   }, [fetchTasksForDate]);
+
+  
+  useEffect(() => {
+    if (!tasks.length) return;
+    
+    
+    const todayDate = formatDateForApi(new Date());
+    
+   
+    const filteredTasks = tasks.filter(task => {
+      const isCompleted = task.status === 'COMPLETED' || task.completed;
+      
+      if (selectedDate === todayDate && isCompleted) {
+        
+        return true;
+      } else if (!isCompleted && task.deadline?.split('T')[0] === selectedDate) {
+       
+        return true;
+      }
+      
+      return false;
+    });
+    
+    setDisplayTasks(filteredTasks);
+  }, [tasks, selectedDate]);
 
   const formatDate = (dateString) => {
     try {
@@ -60,35 +94,15 @@ const CompletedTasks = () => {
         status: newStatus 
       })).unwrap();
       
-      // Refresh tasks after status update
+      
       await fetchTasksForDate(selectedDate);
     } catch (error) {
       console.error('Error toggling task completion:', error);
     }
   };
 
-  // Filter tasks based on the selected date
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      // For completed tasks, check if completionDate matches selected date
-      // For active tasks, check if deadline matches selected date
-      const checkDate = task.status === 'COMPLETED' 
-        ? task.completionDate 
-        : task.deadline;
-      
-      return checkDate && checkDate.split('T')[0] === selectedDate;
-    });
-  }, [tasks, selectedDate]);
-  
-  const completedTasks = useMemo(() =>
-    filteredTasks.filter(task => task.completed || task.status === 'COMPLETED'), 
-    [filteredTasks]
-  );
-  
-  const activeTasks = useMemo(() =>
-    filteredTasks.filter(task => !task.completed && task.status !== 'COMPLETED'), 
-    [filteredTasks]
-  );
+  const completedTasks = displayTasks.filter(task => task.completed || task.status === 'COMPLETED');
+  const activeTasks = displayTasks.filter(task => !task.completed && task.status !== 'COMPLETED');
 
   return (
     <div className="completed-page">
@@ -96,20 +110,22 @@ const CompletedTasks = () => {
         <ProfileHeader />
       </div>
   
-      <div className="date-label-display">
+      <div className="date-title">
         {formatDate(selectedDate)}
       </div>
   
       {error && <div className="error-message">{error}</div>}
   
       {loading ? (
-        <div className="loading-indicator">Loading tasks...</div>
+        <div className="loading">Loading tasks...</div>
+      ) : displayTasks.length === 0 ? (
+        <div className="no-tasks">No tasks for this date</div>
       ) : (
         <>
           {/* Show completed tasks */}
           {completedTasks.length > 0 && (
             <>
-              <h4 className="section-title">Completed Tasks</h4>
+              <h4 className="subsection-title">Completed Tasks</h4>
               <div className="task-list">
                 {completedTasks.map((task) => (
                   <div 
@@ -117,7 +133,8 @@ const CompletedTasks = () => {
                     key={task.id}
                     onClick={() => toggleTaskCompletion(task.id, true)}
                   >
-                    {task.name || task.title || 'Untitled Task'}
+                    <span className="task-status-indicator">✓</span>
+                    {task.title || task.name || 'Untitled Task'}
                     {task.description && (
                       <div className="task-description">{task.description}</div>
                     )}
@@ -126,11 +143,11 @@ const CompletedTasks = () => {
               </div>
             </>
           )}
-    
+  
           {/* Show active tasks */}
           {activeTasks.length > 0 && (
             <>
-              <h4 className="section-title">Active Tasks</h4>
+              <h4 className="subsection-title">Active Tasks</h4>
               <div className="task-list">
                 {activeTasks.map((task) => (
                   <div 
@@ -138,7 +155,8 @@ const CompletedTasks = () => {
                     key={task.id}
                     onClick={() => toggleTaskCompletion(task.id, false)}
                   >
-                    {task.name || task.title || 'Untitled Task'}
+                    <span className="task-status-indicator"></span>
+                    {task.title || task.name || 'Untitled Task'}
                     {task.description && (
                       <div className="task-description">{task.description}</div>
                     )}
@@ -146,10 +164,6 @@ const CompletedTasks = () => {
                 ))}
               </div>
             </>
-          )}
-    
-          {completedTasks.length === 0 && activeTasks.length === 0 && (
-            <div className="no-tasks">No tasks for this date</div>
           )}
         </>
       )}
