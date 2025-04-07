@@ -98,29 +98,19 @@
     position: absolute;
     left: 0;
     top: -5px;
-    cursor: pointer;
 }
 
-.submitButton {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+.checkmarkIcon {
     width: 100px;
     height: 100px;
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%); 
     top: -15px;
 }
 
-.submitButton:focus {
-    outline: none;
-}
-
-.checkmarkIcon {
-    width: 100%;
-    height: 100%;
+.actionButtons img {
+    cursor: pointer;
     object-fit: contain;
 }
 
@@ -136,7 +126,6 @@
     width: 100%;
     padding: 5px 0;     
 }
-
 .successPopup {
     position: fixed;
     top: 0;
@@ -182,7 +171,6 @@
 .okButton:hover {
     background: #15e895;
 }
-
 .errorInput {
     border: 2px solid #ff6b6b !important;
     animation: shake 0.5s;
