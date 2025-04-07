@@ -17,23 +17,29 @@ const Dashboard = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { tasks } = useSelector((state) => state.tasks);
+  
   const [selectedTask, setSelectedTask] = useState(null);
   const [confirmationTask, setConfirmationTask] = useState(null);
   const [deleteConfirmationTask, setDeleteConfirmationTask] = useState(null);
+  const [editConfirmationTask, setEditConfirmationTask] = useState(null);
 
-  
+  const isDeadlinePassed = (deadline) => {
+    if (!deadline) return false;
+    
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    
+    today.setHours(0, 0, 0, 0);
+    deadlineDate.setHours(0, 0, 0, 0);
+    
+    return deadlineDate < today;
+  };
+
   useEffect(() => {
-    dispatch(
-      fetchTasks({
-        includeCompleted: false, 
-      })
-    );
+    dispatch(fetchTasks({ includeCompleted: false }));
   }, [dispatch, location.state?.shouldRefresh]);
 
-  
-  const activeTasks = tasks.filter((task) => {
-    return !task.completed;
-  });
+  const activeTasks = tasks.filter((task) => !task.completed);
 
   const handleCompleteTask = async (taskId) => {
     try {
@@ -46,13 +52,7 @@ const Dashboard = () => {
           completionDate: today 
         })
       ).unwrap();
-
-      await dispatch(
-        fetchTasks({
-          includeCompleted: false,
-        })
-      );
-
+      await dispatch(fetchTasks({ includeCompleted: false }));
       setConfirmationTask(null);
     } catch (error) {
       console.error("Error completing task:", error);
@@ -101,8 +101,10 @@ const Dashboard = () => {
         {activeTasks.map((task) => (
           <div key={task.id} className={styles.taskRow}>
             <div
-              className={`${styles.taskButton} ${styles.taskText}`}
-              onClick={() => handleEditTask(task)}
+              className={`${styles.taskButton} ${styles.taskText} ${
+                isDeadlinePassed(task.deadline) ? styles.overdueTask : ""
+              }`}
+              onClick={() => setEditConfirmationTask(task)}
             >
               {task.name}
             </div>
@@ -142,22 +144,22 @@ const Dashboard = () => {
 
       <div className={styles.footerText}>family planner</div>
 
+      {/* Modal for viewing task details */}
       {selectedTask && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setSelectedTask(null)}
-        >
+        <div className={styles.modalOverlay} onClick={() => setSelectedTask(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>{selectedTask.name}</h3>
-            <p className={styles.modalText}>
-              <span style={{ fontWeight: "bold" }}>Description:</span>
-              <br />
-              {selectedTask.description || "No description provided"}
-            </p>
-            <p className={styles.modalText}>
-              <span style={{ fontWeight: "bold" }}>Deadline:</span>{" "}
-              {selectedTask.deadline}
-            </p>
+            <div className={styles.modalContent}>
+              <p className={styles.modalText}>
+                <span style={{ fontWeight: "bold" }}>Description:</span>
+                <br />
+                {selectedTask.description || "No description provided"}
+              </p>
+              <p className={styles.modalText}>
+                <span style={{ fontWeight: "bold" }}>Deadline:</span>{" "}
+                {selectedTask.deadline}
+              </p>
+            </div>
             <button
               className={styles.okButton}
               onClick={() => setSelectedTask(null)}
@@ -168,11 +170,9 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Modal for completing task confirmation */}
       {confirmationTask && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setConfirmationTask(null)}
-        >
+        <div className={styles.modalOverlay} onClick={() => setConfirmationTask(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>Confirm completion</h3>
             <p className={styles.modalText}>
@@ -196,11 +196,9 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Modal for deleting task confirmation */}
       {deleteConfirmationTask && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setDeleteConfirmationTask(null)}
-        >
+        <div className={styles.modalOverlay} onClick={() => setDeleteConfirmationTask(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>Confirm deletion</h3>
             <p className={styles.modalText}>
@@ -216,6 +214,35 @@ const Dashboard = () => {
               <button
                 className={`${styles.okButton} ${styles.noButton}`}
                 onClick={() => setDeleteConfirmationTask(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for editing task confirmation */}
+      {editConfirmationTask && (
+        <div className={styles.modalOverlay} onClick={() => setEditConfirmationTask(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Confirm editing</h3>
+            <p className={styles.modalText}>
+              Do you want to edit "{editConfirmationTask.name}"?
+            </p>
+            <div className={styles.confirmationButtons}>
+              <button
+                className={`${styles.okButton} ${styles.yesButton}`}
+                onClick={() => {
+                  handleEditTask(editConfirmationTask);
+                  setEditConfirmationTask(null);
+                }}
+              >
+                Yes
+              </button>
+              <button
+                className={`${styles.okButton} ${styles.noButton}`}
+                onClick={() => setEditConfirmationTask(null)}
               >
                 No
               </button>
