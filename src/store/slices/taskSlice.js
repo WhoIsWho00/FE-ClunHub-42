@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../utils/axiosConfig";
 import { formatDateForApi } from "../../utils/dataMappers";
@@ -6,9 +5,22 @@ import { formatDateForApi } from "../../utils/dataMappers";
 // Утиліти для сортування та організації завдань
 const sortTasksByDate = (tasks) => {
   return [...tasks].sort((a, b) => {
-    const dateA = new Date(a.deadline || a.completionDate || 0);
-    const dateB = new Date(b.deadline || b.completionDate || 0);
-    return dateB - dateA;
+    // Визначаємо дату для сортування
+    // Для виконаних завдань використовуємо completionDate, інакше deadline
+    const dateA = new Date(
+      (a.status === 'COMPLETED' || a.completed) 
+        ? a.completionDate || a.deadline || 0 
+        : a.deadline || 0
+    );
+    
+    const dateB = new Date(
+      (b.status === 'COMPLETED' || b.completed) 
+        ? b.completionDate || b.deadline || 0 
+        : b.deadline || 0
+    );
+    
+    // Сортуємо від ранішої дати до пізнішої (у порядку зростання)
+    return dateA - dateB;
   });
 };
 
@@ -137,7 +149,7 @@ export const fetchTasks = createAsyncThunk(
   "tasks/fetchTasks",
   async (params, { rejectWithValue }) => {
     try {
-      const { fromDate, toDate, includeCompleted = false } = params || {};
+      const { fromDate, toDate, includeCompleted = false, useSmartFilter = false } = params || {};
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -145,7 +157,10 @@ export const fetchTasks = createAsyncThunk(
       const startDate = fromDate || formatDateForApi(firstDay);
       const endDate = toDate || formatDateForApi(lastDay);
 
-      const url = `/api/tasks/calendar?startDate=${startDate}&endDate=${endDate}&includeCompleted=${includeCompleted}`;
+      // Вибираємо URL залежно від параметра useSmartFilter
+      const url = useSmartFilter
+        ? `/api/tasks/calendar/smart?startDate=${startDate}&endDate=${endDate}&includeCompleted=${includeCompleted}`
+        : `/api/tasks/calendar?startDate=${startDate}&endDate=${endDate}&includeCompleted=${includeCompleted}`;
 
       const response = await axios.get(url);
       
@@ -171,8 +186,10 @@ export const updateTaskStatus = createAsyncThunk(
       const response = await axios.patch(`/api/tasks/${id}/status?status=${status}`);
       
       // After successful API call, get all tasks including completed ones
+      // Використовуємо розумний фільтр для правильного відображення завдань
       await dispatch(fetchTasks({ 
-        includeCompleted: true 
+        includeCompleted: true,
+        useSmartFilter: true
       })).unwrap();
       
       return {
@@ -260,26 +277,6 @@ const taskSlice = createSlice({
         state.tasks = sortTasksByDate(mappedTasks);
         
         // Create tasksByDate map with proper organization
-        state.tasksByDate = mappedTasks.reduce((acc, task) => {
-          // For completed tasks, use completionDate
-          let dateKey;
-          
-          if (task.status === "COMPLETED") {
-            dateKey = task.completionDate;
-          } else {
-            // For incomplete tasks, use deadline
-            dateKey = task.deadline?.split('T')[0];
-          }
-          
-          if (dateKey) {
-            if (!acc[dateKey]) {
-              acc[dateKey] = [];
-            }
-            acc[dateKey].push(task);
-          }
-          
-          return acc;
-        }, {});
         state.tasksByDate = organizeTasksByDate(mappedTasks);
         state.totalElements = action.payload.totalElements || mappedTasks.length;
         state.totalPages = action.payload.totalPages || 1;

@@ -31,7 +31,7 @@ const Calendar = () => {
   const [currentYear, setYear] = useState(today.getFullYear());
   const [currentMonth, setMonth] = useState(today.getMonth());
 
-  // Local state to organize tasks by date
+ 
   const [organizedTasks, setOrganizedTasks] = useState({});
 
   useEffect(() => {
@@ -43,11 +43,13 @@ const Calendar = () => {
         const fromDate = formatDateForApi(startDate);
         const toDate = formatDateForApi(endDate);
 
+        
         await dispatch(
           fetchTasks({
             fromDate,
             toDate,
-            includeCompleted: true, // Include completed tasks
+            includeCompleted: true,
+            useSmartFilter: true 
           })
         );
       } catch (err) {
@@ -59,22 +61,33 @@ const Calendar = () => {
   }, [currentYear, currentMonth, dispatch]);
 
   useEffect(() => {
-    const todayDate = formatDateForApi(new Date());
+    
     const tasksByDate = {};
 
     tasks.forEach((task) => {
       const isCompleted = task.status === "COMPLETED" || task.completed;
-      // Використовуємо дату завершення для виконаних завдань
-      const dateKey = isCompleted
-        ? task.completionDate?.split("T")[0] || todayDate
-        : task.deadline?.split("T")[0];
-
-      if (dateKey) {
-        if (!tasksByDate[dateKey]) {
-          tasksByDate[dateKey] = [];
-        }
-        tasksByDate[dateKey].push(task);
+      
+      // Отримуємо відповідну дату для задачі
+      let dateKey;
+      
+      if (isCompleted && task.completionDate) {
+        // Для виконаних завдань використовуємо дату виконання
+        dateKey = task.completionDate.split("T")[0];
+      } else if (task.dueDate) {
+        // Для невиконаних завдань використовуємо дедлайн
+        dateKey = task.dueDate.split("T")[0];
+      } else if (task.deadline) {
+        // Деякі API можуть повертати дату з назвою поля deadline
+        dateKey = task.deadline.split("T")[0];
+      } else {
+        // Якщо немає дат, пропускаємо завдання
+        return;
       }
+
+      if (!tasksByDate[dateKey]) {
+        tasksByDate[dateKey] = [];
+      }
+      tasksByDate[dateKey].push(task);
     });
 
     setOrganizedTasks(tasksByDate);
@@ -85,14 +98,14 @@ const Calendar = () => {
     const paddedDay = day.toString().padStart(2, '0');
     const dateStr = `${currentYear}-${paddedMonth}-${paddedDay}`;
     
-    // Check if there are tasks for this date
+    
     const tasksForDate = getTasksForDay(day);
     
     if (tasksForDate.length === 0) {
-      // Show popup message instead of navigating
+      
       setNoTasksDate(dateStr);
     } else {
-      // Navigate as usual
+      
       localStorage.setItem('selectedDate', dateStr);
       navigate('/completed');
     }

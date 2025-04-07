@@ -16,7 +16,6 @@ const CompletedTasks = () => {
 
   const fetchTasksForDate = useCallback(async (date) => {
     try {
-     
       const selectedDateObj = new Date(date);
       const firstDayOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
       const lastDayOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0);
@@ -24,10 +23,12 @@ const CompletedTasks = () => {
       const fromDate = formatDateForApi(firstDayOfMonth);
       const toDate = formatDateForApi(lastDayOfMonth);
       
+      
       await dispatch(fetchTasks({
         fromDate: fromDate,
         toDate: toDate,
-        includeCompleted: true
+        includeCompleted: true,
+        useSmartFilter: true
       }));
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -45,26 +46,20 @@ const CompletedTasks = () => {
     fetchTasksForDate(dateToUse);
   }, [fetchTasksForDate]);
 
-  
   useEffect(() => {
     if (!tasks.length) return;
     
+    const selectedDateOnly = selectedDate.split('T')[0];
     
-    const todayDate = formatDateForApi(new Date());
     
-   
+    // Завдання вже приходять з бекенду відсортовані за відповідними датами (виконані за датою виконання, невиконані за дедлайном)
     const filteredTasks = tasks.filter(task => {
-      const isCompleted = task.status === 'COMPLETED' || task.completed;
+      // Визначаємо дату для порівняння
+      const taskDate = (task.status === 'COMPLETED' || task.completed)
+        ? task.completionDate?.split('T')[0] 
+        : task.dueDate?.split('T')[0] || task.deadline?.split('T')[0];
       
-      if (selectedDate === todayDate && isCompleted) {
-        
-        return true;
-      } else if (!isCompleted && task.deadline?.split('T')[0] === selectedDate) {
-       
-        return true;
-      }
-      
-      return false;
+      return taskDate === selectedDateOnly;
     });
     
     setDisplayTasks(filteredTasks);
@@ -94,7 +89,7 @@ const CompletedTasks = () => {
         status: newStatus 
       })).unwrap();
       
-      
+      // Оновлюємо список завдань після зміни статусу
       await fetchTasksForDate(selectedDate);
     } catch (error) {
       console.error('Error toggling task completion:', error);
