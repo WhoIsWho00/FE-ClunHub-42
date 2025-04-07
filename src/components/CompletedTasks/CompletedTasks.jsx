@@ -133,7 +133,7 @@ const CompletedTasks = () => {
                     key={task.id}
                     onClick={() => toggleTaskCompletion(task.id, true)}
                   >
-                    <span className="task-status-indicator">✓</span>
+                    <span className="task-status-indicator">✓ </span>
                     {task.title || task.name || 'Untitled Task'}
                     {task.description && (
                       <div className="task-description">{task.description}</div>

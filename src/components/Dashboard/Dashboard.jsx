@@ -11,8 +11,6 @@ import ProfileHeader from "../ProfileHeader/ProfileHeader";
 import eyesIcon from "/src/assets/images/eyes.png";
 import checkmarkIcon from "/src/assets/images/checkmark.png";
 import cancelIcon from "/src/assets/images/cancel.png";
-import arrowUpIcon from "/src/assets/images/arrow01.svg";
-import arrowDownIcon from "/src/assets/images/arrow02.svg";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -22,28 +20,30 @@ const Dashboard = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [confirmationTask, setConfirmationTask] = useState(null);
   const [deleteConfirmationTask, setDeleteConfirmationTask] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
 
-  // Fetch tasks on component mount and when shouldRefresh changes
+  
   useEffect(() => {
     dispatch(
       fetchTasks({
-        includeCompleted: false, // Only fetch active tasks
+        includeCompleted: false, 
       })
     );
   }, [dispatch, location.state?.shouldRefresh]);
 
-  // Filter out completed tasks
+  
   const activeTasks = tasks.filter((task) => {
     return !task.completed;
   });
 
   const handleCompleteTask = async (taskId) => {
     try {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
       await dispatch(
         updateTaskStatus({
           id: taskId,
           status: "COMPLETED",
+          completionDate: today 
         })
       ).unwrap();
 
@@ -68,15 +68,6 @@ const Dashboard = () => {
     }
   };
 
-  const TASKS_PER_PAGE = 3;
-  const totalPages = Math.ceil(activeTasks.length / TASKS_PER_PAGE);
-  const startIndex = currentPage * TASKS_PER_PAGE;
-
-  const visibleTasks = activeTasks.slice(
-    startIndex,
-    startIndex + TASKS_PER_PAGE
-  );
-
   const handleEditTask = (task) => {
     navigate("/addtask", {
       state: {
@@ -84,18 +75,6 @@ const Dashboard = () => {
         isEditing: true,
       },
     });
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
   };
 
   const goToCompletedTasks = () => {
@@ -118,22 +97,8 @@ const Dashboard = () => {
         Add new task
       </button>
 
-      {tasks.length > TASKS_PER_PAGE && (
-        <button
-          className={`${styles.arrowButton} ${styles.arrowButtonTop}`}
-          onClick={goToPrevPage}
-          disabled={currentPage === 0}
-        >
-          <img
-            src={arrowUpIcon}
-            alt="Show previous tasks"
-            className={styles.arrowIcon}
-          />
-        </button>
-      )}
-
-      <div className={styles.taskList}>
-        {visibleTasks.map((task) => (
+      <div className={styles.scrollableTaskList}>
+        {activeTasks.map((task) => (
           <div key={task.id} className={styles.taskRow}>
             <div
               className={`${styles.taskButton} ${styles.taskText}`}
@@ -171,19 +136,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {tasks.length > TASKS_PER_PAGE && (
-        <button
-          className={`${styles.arrowButton} ${styles.arrowButtonBottom}`}
-          onClick={goToNextPage}
-          disabled={currentPage >= totalPages - 1}
-        >
-          <img
-            src={arrowDownIcon}
-            alt="Show next tasks"
-            className={styles.arrowIcon}
-          />
-        </button>
-      )}
       <button className={styles.completedButton} onClick={goToCompletedTasks}>
         Completed tasks
       </button>
