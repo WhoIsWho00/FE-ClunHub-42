@@ -57,7 +57,7 @@ const Dashboard = () => {
     }));
   }, [dispatch, location.state?.shouldRefresh]);
 
-  const activeTasks = tasks.filter((task) => !task.completed);
+  const activeTasks = tasks?.filter(task => !task.completed) || [];
 
   const handleCompleteTask = async (taskId) => {
     try {
