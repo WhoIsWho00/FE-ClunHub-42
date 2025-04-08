@@ -42,7 +42,7 @@ const ProfileHeader = () => {
    const confirmLogout = () => {
     dispatch(logout());
     localStorage.removeItem('token');
-    navigate('/login');
+    navigate('/');
     setShowLogoutConfirm(false);
   };
 
