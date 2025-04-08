@@ -56,15 +56,14 @@ const ForgotPasswordPage = () => {
     if (passwordReset.error) {
       if (passwordReset.error === "code_expired") {
         setIsCodeExpired(true);
-        setError("Код підтвердження втратив чинність. Запросіть новий код.");
+        setError("The verification code has expired. Request a new code.");
       } else if (passwordReset.error === "invalid_token") {
-        setError("Введений код підтвердження невірний.");
+        setError("The verification code you entered is incorrect.");
       } else {
         setError(passwordReset.error);
       }
     }
-    
-    
+      
     if (passwordReset.isLinkSent && step === "email") {
       setSuccessMessage("Reset code sent! Please check your email.");
       setTimeout(() => {
@@ -153,38 +152,43 @@ const ForgotPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     if (step === "email") {
       // Email validation
       if (!email.trim()) {
         setError("Please enter an email address");
         return;
       }
-
+  
       // Email validation regex
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
         setError("Please enter a valid email address");
         return;
       }
-
+  
       try {
         setSuccessMessage(""); 
         
         await dispatch(requestPasswordReset(email)).unwrap();
-       
-      } catch (error) {
-        console.error("Password reset request error:", error);
         
+        // If unwrap() succeeds, it means the request was successful
+        setSuccessMessage("Reset code sent! Please check your email.");
+        setTimeout(() => {
+          setStep("code");
+          setSuccessMessage("");
+        }, 2000);
+        
+      } catch (error) {
+        // Handle specific error scenarios
         if (error === "User is not registered") {
           setError("This email is not registered in our system");
         } else if (error === "Invalid email format") {
           setError("Please enter a valid email address");
         } else {
+          // Generic error handling
           setError(error || "Failed to send reset code. Please try again later.");
         }
-        
-        
       }
     } else if (step === "code") {
       if (code.length !== 6) {
@@ -216,6 +220,7 @@ const ForgotPasswordPage = () => {
           navigate("/login");
         }, 2000);
       } catch (error) {
+        // Handle password reset errors
         setError(error.message || "Failed to reset password");
       }
     }
@@ -351,8 +356,11 @@ const ForgotPasswordPage = () => {
             Back to login
           </a>
         </div>
+        
       </div>
+      <div className={styles.footerText}>family planner</div>
     </div>
+    
   );
 };
 
