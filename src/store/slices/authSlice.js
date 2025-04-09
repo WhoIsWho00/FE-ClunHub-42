@@ -6,32 +6,71 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     console.log("Sending registration data:", userData);
     try {
-      const response = await axios.post(`/api/auth/sign-up`, {
+      // Format data exactly according to the API requirements
+      const requestData = {
         username: userData.username,
         email: userData.email,
         password: userData.password,
         age: parseInt(userData.age),
         avatarId: userData.avatar,
-      });
+      };
+      
+      console.log("Formatted request data:", requestData);
+      
+      const response = await axios.post(`/api/auth/sign-up`, requestData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || "Registration error");
+      console.error("Registration error details:", error.response || error);
+      
+      // Handle specific error types
+      if (error.response) {
+        // Server responded with a non-2xx status
+        if (error.response.status === 409 || 
+           (error.response.data && error.response.data.message && 
+            error.response.data.message.includes("already exists"))) {
+          return rejectWithValue("User with this email already exists");
+        } 
+        else if (error.response.status === 400) {
+          // Handle validation errors
+          if (error.response.data && error.response.data.errors) {
+            // Format validation errors
+            const errorMessages = Object.entries(error.response.data.errors)
+              .map(([field, message]) => `${field}: ${message}`)
+              .join(', ');
+            return rejectWithValue(`Validation failed: ${errorMessages}`);
+          }
+          return rejectWithValue(error.response.data?.message || "Invalid registration data");
+        }
+        else {
+          return rejectWithValue(error.response.data?.message || "Server error occurred");
+        }
+      }
+      
+      // Network errors or other issues
+      return rejectWithValue("Connection error. Please try again later.");
     }
   }
 );
-
 export const loginUser = createAsyncThunk(
   "auth/signin",
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`/api/auth/sign-in`, userData);
+
+      // Make sure the response contains the expected data
+      if (!response.data || !response.data.token || !response.data.user) {
+        return rejectWithValue("invalid_response_format");
+      }
+
       return response.data;
     } catch (error) {
       if (error.response) {
-        // Server returned an error response
         if (error.response.status === 404) {
           return rejectWithValue("user_not_found");
-        } else if (error.response.status === 401) {
+        } else if (
+          error.response.status === 401 ||
+          error.response.status === 403
+        ) {
           return rejectWithValue("invalid_credentials");
         } else {
           return rejectWithValue(
@@ -39,10 +78,8 @@ export const loginUser = createAsyncThunk(
           );
         }
       } else if (error.request) {
-        // Request made but no response received
         return rejectWithValue("server_unreachable");
       } else {
-        // Something else happened while setting up the request
         return rejectWithValue("network_error");
       }
     }
@@ -53,15 +90,41 @@ export const requestPasswordReset = createAsyncThunk(
   "auth/requestPasswordReset",
   async (email, { rejectWithValue }) => {
     try {
+      console.log("Requesting password reset for:", email);
+      
       const response = await axios.post(`/api/auth/forgot-password`, { email });
+      console.log("Password reset response:", response.data);
+      
+      // The API might always return success:true to avoid leaking whether an
+      // email exists in the system (security best practice)
+      if (response.data && response.data.success === false) {
+        return rejectWithValue(response.data.message || "Email not registered");
+      }
+      
+      // Success case - the API should return a message like
+      // "If your email is registered, a password reset code has been sent."
       return response.data;
     } catch (error) {
+      console.error("Password reset error:", error.response || error);
+      
       if (error.response) {
-        return rejectWithValue(
-          error.response.data.message || "Failed to request password reset"
-        );
+        // Server responded with an error
+        if (error.response.status === 404) {
+          // API endpoint not found
+          return rejectWithValue("Service unavailable. Please try again later.");
+        } else if (error.response.data && error.response.data.message) {
+          // Use the server's error message
+          return rejectWithValue(error.response.data.message);
+        } else {
+          // Generic error with status code
+          return rejectWithValue(`Error ${error.response.status}: Failed to send reset code`);
+        }
+      } else if (error.request) {
+        // Request was made but no response received (network issue)
+        return rejectWithValue("Network error. Please check your connection and try again.");
       } else {
-        return rejectWithValue("Network error. Please try again later.");
+        // Something else happened while setting up the request
+        return rejectWithValue("Something went wrong. Please try again later.");
       }
     }
   }
@@ -165,7 +228,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         localStorage.setItem("token", action.payload.token);
-        localStorage.setItem("token", action.payload.token);
+
         localStorage.setItem("user", JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -177,15 +240,19 @@ const authSlice = createSlice({
       .addCase(requestPasswordReset.pending, (state) => {
         state.passwordReset.isLoading = true;
         state.passwordReset.error = null;
+
+        state.passwordReset.isLinkSent = false;
       })
       .addCase(requestPasswordReset.fulfilled, (state) => {
         state.passwordReset.isLoading = false;
+
         state.passwordReset.isLinkSent = true;
         state.passwordReset.message =
           "If your email is registered, a password reset code has been sent.";
       })
       .addCase(requestPasswordReset.rejected, (state, action) => {
         state.passwordReset.isLoading = false;
+        state.passwordReset.isLinkSent = false;
         state.passwordReset.error = action.payload;
       })
 

@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTasks } from '../../store/slices/taskSlice';
-import { formatDateForApi } from '../../utils/dataMappers';
-import ProfileHeader from '../ProfileHeader/ProfileHeader';
-import leftArrow from '../../assets/images/left.png';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import './Calendar.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTasks } from "../../store/slices/taskSlice";
+import { formatDateForApi } from "../../utils/dataMappers";
+import ProfileHeader from "../ProfileHeader/ProfileHeader";
+import leftArrow from "../../assets/images/left.png";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "./Calendar.css";
+import { formatDateKey } from "../../utils/dateHelpers";
 
-function TaskBubble({ name }) {
+function TaskBubble({ task }) {
+  const isCompleted = task.status === "COMPLETED" || task.completed;
+
   return (
     <div className="task-bubble-wrapper">
-      <div className="task-bubble">{name}</div>
-      <span className="tooltip">{name}</span>
+      <div
+        className={`task-bubble ${isCompleted ? "completed-task" : ""}`}
+      ></div>
     </div>
   );
 }
@@ -21,11 +25,14 @@ function TaskBubble({ name }) {
 const Calendar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { tasksByDate, loading, error } = useSelector(state => state.tasks);
-
+  const { tasks, loading, error } = useSelector((state) => state.tasks);
+  const [noTasksDate, setNoTasksDate] = useState(null);
   const today = new Date();
   const [currentYear, setYear] = useState(today.getFullYear());
   const [currentMonth, setMonth] = useState(today.getMonth());
+
+  // Local state to organize tasks by date
+  const [organizedTasks, setOrganizedTasks] = useState({});
 
   useEffect(() => {
     const fetchMonthTasks = async () => {
@@ -35,30 +42,62 @@ const Calendar = () => {
 
         const fromDate = formatDateForApi(startDate);
         const toDate = formatDateForApi(endDate);
-      
-        // const fromDate = startDate.toISOString().split('T')[0];
-      // const toDate = endDate.toISOString().split('T')[0];
 
-      await dispatch(fetchTasks({ 
-        fromDate, 
-        toDate, 
-        includeCompleted: true // Це дозволить відображати завершені завдання
-      }));
-    } catch (err) {
-      console.error('Failed to fetch tasks:', err);
-    }
-  };
+        await dispatch(
+          fetchTasks({
+            fromDate,
+            toDate,
+            includeCompleted: true, // Include completed tasks
+          })
+        );
+      } catch (err) {
+        console.error("Failed to fetch tasks:", err);
+      }
+    };
 
     fetchMonthTasks();
   }, [currentYear, currentMonth, dispatch]);
 
+  useEffect(() => {
+    const todayDate = formatDateForApi(new Date());
+    const tasksByDate = {};
+
+    tasks.forEach((task) => {
+      const isCompleted = task.status === "COMPLETED" || task.completed;
+
+      // Only process completed tasks
+      if (isCompleted) {
+        // Use the completion date for completed tasks
+        const dateKey = task.completionDate?.split("T")[0] || todayDate;
+
+        if (dateKey) {
+          if (!tasksByDate[dateKey]) {
+            tasksByDate[dateKey] = [];
+          }
+          tasksByDate[dateKey].push(task);
+        }
+      }
+    });
+
+    setOrganizedTasks(tasksByDate);
+  }, [tasks]);
+
   const handleTaskClick = (day) => {
-    const paddedMonth = (currentMonth + 1).toString().padStart(2, '0');
-    const paddedDay = day.toString().padStart(2, '0');
+    const paddedMonth = (currentMonth + 1).toString().padStart(2, "0");
+    const paddedDay = day.toString().padStart(2, "0");
     const dateStr = `${currentYear}-${paddedMonth}-${paddedDay}`;
 
-    localStorage.setItem('selectedDate', dateStr);
-    navigate('/completed');
+    // Check if there are tasks for this date
+    const tasksForDate = getTasksForDay(day);
+
+    if (tasksForDate.length === 0) {
+      // Show popup message instead of navigating
+      setNoTasksDate(dateStr);
+    } else {
+      // Navigate as usual
+      localStorage.setItem("selectedDate", dateStr);
+      navigate("/completed");
+    }
   };
 
   const prevMonth = () => {
@@ -80,13 +119,12 @@ const Calendar = () => {
   };
 
   const getTasksForDay = (day) => {
-    const paddedMonth = (currentMonth + 1).toString().padStart(2, '0');
-    const paddedDay = day.toString().padStart(2, '0');
-    const key = `${currentYear}-${paddedMonth}-${paddedDay}`;
-    return tasksByDate[key] || [];
+    const key = formatDateKey(currentYear, currentMonth, day);
+    return organizedTasks[key] || [];
   };
 
-  const getFirstDayOfMonth = () => new Date(currentYear, currentMonth, 1).getDay();
+  const getFirstDayOfMonth = () =>
+    new Date(currentYear, currentMonth, 1).getDay();
   const getStartingDayOfWeek = () => {
     const firstDay = getFirstDayOfMonth();
     return firstDay === 0 ? 6 : firstDay - 1;
@@ -106,13 +144,39 @@ const Calendar = () => {
 
   return (
     <div className="calendar-page">
-      <div className="top-header">
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: "20px",
+        }}
+      >
         <ProfileHeader />
       </div>
 
       <div className="completed-tasks-title">Tasks Calendar</div>
 
       {error && <div className="error-message">{error}</div>}
+
+      {noTasksDate && (
+        <div className="modalOverlay" onClick={() => setNoTasksDate(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modalTitle">No Tasks</h3>
+            <p className="modalText">
+              No completed tasks for{" "}
+              {new Date(noTasksDate).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            <button className="okButton" onClick={() => setNoTasksDate(null)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="calendar-box">
         <div className="calendar-header">
@@ -128,9 +192,9 @@ const Calendar = () => {
             showMonthYearPicker
             customInput={
               <span className="calendar-custom-label">
-                {new Date(currentYear, currentMonth).toLocaleString('en-US', {
-                  month: 'long',
-                  year: 'numeric',
+                {new Date(currentYear, currentMonth).toLocaleString("en-US", {
+                  month: "long",
+                  year: "numeric",
                 })}
               </span>
             }
@@ -140,8 +204,10 @@ const Calendar = () => {
         </div>
 
         <div className="weekdays">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
-            <div key={i} className="weekday">{day}</div>
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => (
+            <div key={i} className="weekday">
+              {day}
+            </div>
           ))}
         </div>
 
@@ -156,31 +222,35 @@ const Calendar = () => {
             {Array.from({ length: daysInMonth }).map((_, index) => {
               const day = index + 1;
               const taskList = getTasksForDay(day);
+              const completedTasks = taskList.filter(
+                (task) => task.status === "COMPLETED" || task.completed
+              );
+              const activeTasks = taskList.filter(
+                (task) => task.status !== "COMPLETED" && !task.completed
+              );
 
               return (
-                <div 
-                  key={day} 
-                  className={`calendar-cell ${isToday(day) ? 'today' : ''}`} 
+                <div
+                  key={day}
+                  className={`calendar-cell ${isToday(day) ? "today" : ""}`}
                   onClick={() => handleTaskClick(day)}
                 >
                   <div className="day-number">{day}</div>
 
                   {taskList.length > 0 && (
                     <div className="task-count">
-                      {taskList.length} task{taskList.length !== 1 ? 's' : ''}
+                      {completedTasks.length > 0 && (
+                        <span className="completed-count">
+                          {completedTasks.length} completed
+                        </span>
+                      )}
+                      {activeTasks.length > 0 && (
+                        <span className="active-count">
+                          {activeTasks.length} task
+                          {activeTasks.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
-                  )}
-
-                  {taskList.slice(0, 2).map((task, i) => (
-                    <TaskBubble 
-                      key={i} 
-                      name={task.name || task.title || 'Untitled'} 
-                      isCompleted={task.status === 'COMPLETED'}
-                    />
-                  ))}
-
-                  {taskList.length > 2 && (
-                    <div className="more-tasks">+{taskList.length - 2} more</div>
                   )}
                 </div>
               );
@@ -194,7 +264,7 @@ const Calendar = () => {
           src={leftArrow}
           alt="back"
           className="back-arrow-img"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate("/dashboard")}
         />
         <p className="footer-title">family planner</p>
       </div>
