@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { requestPasswordReset, resetPassword, clearPasswordResetState } from "../../store/slices/authSlice";
+import { requestPasswordReset, resetPassword, clearPasswordResetState, verifyResetCode } from "../../store/slices/authSlice";
 import styles from "./ForgotPasswordPage.module.css";
 import clanHubLogo from "../../assets/images/Logo2.png";
 
@@ -52,7 +52,6 @@ const ForgotPasswordPage = () => {
   }, [step, remainingTime]);
 
   useEffect(() => {
-    
     if (passwordReset.error) {
       if (passwordReset.error === "code_expired") {
         setIsCodeExpired(true);
@@ -63,15 +62,7 @@ const ForgotPasswordPage = () => {
         setError(passwordReset.error);
       }
     }
-      
-    if (passwordReset.isLinkSent && step === "email") {
-      setSuccessMessage("Reset code sent! Please check your email.");
-      setTimeout(() => {
-        setStep("code");
-        setSuccessMessage("");
-      }, 2000);
-    }
-  }, [passwordReset.error, passwordReset.isLinkSent, step]);
+  }, [passwordReset.error]);
 
   useEffect(() => {
     if (step === "code") {
@@ -168,34 +159,45 @@ const ForgotPasswordPage = () => {
       }
   
       try {
-        setSuccessMessage(""); 
-        
+        setSuccessMessage("");
+       
         await dispatch(requestPasswordReset(email)).unwrap();
-        
-        // If unwrap() succeeds, it means the request was successful
         setSuccessMessage("Reset code sent! Please check your email.");
         setTimeout(() => {
           setStep("code");
           setSuccessMessage("");
         }, 2000);
-        
+
       } catch (error) {
-        // Handle specific error scenarios
-        if (error === "User is not registered") {
-          setError("This email is not registered in our system");
-        } else if (error === "Invalid email format") {
-          setError("Please enter a valid email address");
-        } else {
-          // Generic error handling
-          setError(error || "Failed to send reset code. Please try again later.");
-        }
+        if (error.response?.status === 404) {
+          setError("This email is not registered in our system.");
+        } 
       }
     } else if (step === "code") {
       if (code.length !== 6) {
         setError("Please enter a valid 6-digit code");
         return;
       }
-      setStep("password");
+
+      // Verify the code with the server
+      try {
+        await dispatch(verifyResetCode({ email: email, token: code })).unwrap();
+        
+        // Only proceed to the next step if verification succeeded
+        setStep("password");
+      } catch (error) {
+        // Handle specific error types
+        if (error === "invalid_token") {
+          setError("The verification code you entered is incorrect.");
+        } else if (error === "code_expired") {
+          setIsCodeExpired(true);
+          setError("The verification code has expired. Please request a new code.");
+        } else if (error === "code_not_found") {
+          setError("Invalid verification code. Please check and try again.");
+        } else {
+          setError(error || "Failed to verify code. Please try again.");
+        }
+      }
     } else if (step === "password") {
       const passwordError = validatePassword(newPassword);
       if (passwordError) {
@@ -212,6 +214,7 @@ const ForgotPasswordPage = () => {
             token: code,
             newPassword,
             confirmPassword: repeatPassword,
+            email: email
           })
         ).unwrap();
         
@@ -221,7 +224,7 @@ const ForgotPasswordPage = () => {
         }, 2000);
       } catch (error) {
         // Handle password reset errors
-        setError(error.message || "Failed to reset password");
+        setError(error || "Failed to reset password");
       }
     }
   };
@@ -332,7 +335,9 @@ const ForgotPasswordPage = () => {
               />
             </>
           )}
-          {error && <span className={styles.error}>{error}</span>}
+          {error && <span className={styles.error}>
+  {typeof error === 'object' ? error.message || JSON.stringify(error) : error}
+</span>}
           <button 
             id="submit-btn" 
             type="submit" 
