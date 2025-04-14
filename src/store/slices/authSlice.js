@@ -64,18 +64,22 @@ export const loginUser = createAsyncThunk(
 
       return response.data;
     } catch (error) {
+      console.error("Login error:", error);
+      
       if (error.response) {
-        if (error.response.status === 404) {
+        // Specifically handle the 400 Bad Request with "Invalid email or password"
+        if (error.response.status === 400) {
+          if (typeof error.response.data === 'string' && 
+              error.response.data.includes("Invalid email or password")) {
+            return rejectWithValue("invalid_credentials");
+          }
+          return rejectWithValue(error.response.data || "bad_request");
+        } else if (error.response.status === 404) {
           return rejectWithValue("user_not_found");
-        } else if (
-          error.response.status === 401 ||
-          error.response.status === 403
-        ) {
+        } else if (error.response.status === 401 || error.response.status === 403) {
           return rejectWithValue("invalid_credentials");
         } else {
-          return rejectWithValue(
-            error.response.data?.message || "server_error"
-          );
+          return rejectWithValue(error.response.data || "server_error");
         }
       } else if (error.request) {
         return rejectWithValue("server_unreachable");

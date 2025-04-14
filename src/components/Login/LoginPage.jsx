@@ -77,13 +77,15 @@ const LoginPage = () => {
       // Handle various error types
       if (error === "user_not_found") {
         setErrors({
-          submit: "Invalid User"
+          submit: "User not found. Please check your email."
         });
-      } else if (error === "invalid_credentials") {
+      } else if (error === "invalid_credentials" || 
+                (typeof error === 'string' && error.includes("Invalid email or password"))) {
         setErrors({
           submit: "Incorrect email or password. Please try again."
         });
-      } else if (error === "server_unreachable" || (typeof error === 'string' && error.includes("server"))) {
+      } else if (error === "server_unreachable" || 
+                (typeof error === 'string' && error.includes("server"))) {
         setErrors({
           submit: "Server is temporarily unavailable. Please try again later."
         });
